@@ -1,0 +1,102 @@
+build gradle
+plugins {
+    kotlin("jvm") version "1.8.10"  // or the appropriate version
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation(kotlin("stdlib"))
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+
+mainKt
+package com.vehicle.rental
+
+abstract class Vehicle(
+    private val vehicleId: String,
+    private val model: String,
+    private val baseRentalRate: Double
+) {
+    private var isAvailable: Boolean = true
+
+    init {
+        require(vehicleId.isNotBlank()) { "Vehicle ID cannot be blank." }
+        require(model.isNotBlank()) { "Model cannot be blank." }
+        require(baseRentalRate > 0) { "Base rental rate must be positive." }
+    }
+
+    fun getVehicleId() = vehicleId
+    fun getModel() = model
+    fun getBaseRentalRate() = baseRentalRate
+    fun isAvailable() = isAvailable
+
+    fun setAvailable(available: Boolean) {
+        this.isAvailable = available
+    }
+
+    abstract fun calculateRentalCost(days: Int): Double
+    abstract fun isAvailableForRental(): Boolean
+}
+
+class Car(vehicleId: String, model: String, baseRentalRate: Double) : Vehicle(vehicleId, model, baseRentalRate) {
+    override fun calculateRentalCost(days: Int): Double {
+        val discount = if (days > 7) 0.9 else 1.0
+        return getBaseRentalRate() * days * discount
+    }
+
+    override fun isAvailableForRental(): Boolean {
+        return isAvailable()
+    }
+}
+
+class Motorcycle(vehicleId: String, model: String, baseRentalRate: Double) : Vehicle(vehicleId, model, baseRentalRate) {
+    override fun calculateRentalCost(days: Int): Double {
+        return getBaseRentalRate() * days
+    }
+
+    override fun isAvailableForRental(): Boolean {
+        return isAvailable()
+    }
+}
+
+class Truck(vehicleId: String, model: String, baseRentalRate: Double) : Vehicle(vehicleId, model, baseRentalRate) {
+    override fun calculateRentalCost(days: Int): Double {
+        val extraCharge = if (days > 5) 50.0 else 0.0
+        return getBaseRentalRate() * days + extraCharge
+    }
+
+    override fun isAvailableForRental(): Boolean {
+        return isAvailable()
+    }
+}
+
+fun main() {
+    val vehicles = listOf<Vehicle>(
+        Car("C001", "Toyota Corolla", 50.0),
+        Motorcycle("M001", "Harley Davidson", 30.0),
+        Truck("T001", "Ford F-150", 100.0)
+    )
+
+    vehicles.forEach { vehicle ->
+        println("Vehicle: ${vehicle.getModel()}, Rental Cost (3 days): ${vehicle.calculateRentalCost(3)}")
+    }
+
+    val car = vehicles[0] as Car
+    if (car.isAvailableForRental()) {
+        car.setAvailable(false)
+        println("${car.getModel()} rented successfully!")
+    } else {
+        println("${car.getModel()} is not available for rental.")
+    }
+
+    car.setAvailable(true)
+    println("${car.getModel()} returned successfully!")
+}
